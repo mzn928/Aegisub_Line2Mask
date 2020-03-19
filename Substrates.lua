@@ -5,7 +5,7 @@
 script_name = "Line2Mask"
 script_description = "Create masks based on line properties."
 script_author = "Sam1367"
-script_version = "0.0.1"
+script_version = "0.0.2"
 
 include("karaskel.lua")
 
@@ -63,19 +63,23 @@ function do_for_selected(sub, sel, act)
 		width1 = 0
 		line3 = sub[li]
 		logi1 = true
+		text401 = ""
 		while logi1 do
 			str1 = string.find(text12, "\\N")
 			if str1==nil then
 				logi1 = false
 				line3.text = text12
 				sub[li] = line3
+				line3 = sub[li]
 				karaskel.preproc_line(sub,meta,styles,line3)
 				width1 = math.max(width1,line3.width)
 			else
 				n1 = n1+1
 				line3.text = string.sub(text12,1,str1-1)
 				sub[li] = line3
+				line3 = sub[li]
 				karaskel.preproc_line(sub,meta,styles,line3)
+				text401 = text401..line3.width
 				width1 = math.max(width1,line3.width)
 				text12 = string.sub(text12,str1+2,#text12)
 			end
