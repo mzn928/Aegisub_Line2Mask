@@ -2,9 +2,9 @@
 
 ]]
 
-script_name = "Substrates"
-script_description = "Provide substrate for selected lines"
-script_author = "sam1367"
+script_name = "Line2Mask"
+script_description = "Create masks based on line properties."
+script_author = "Sam1367"
 script_version = "0.0.1"
 
 include("karaskel.lua")
@@ -19,17 +19,17 @@ function do_for_selected(sub, sel, act)
 		{class="checkbox",name="gcolor0",x=0,y=0,width=1,height=1,label="\\c",value=true},
 		{class="color",name="gcolor1",x=1,y=0,width=1,height=1,value="&H9F9FB1&"},
 		{class="checkbox",name="ghd1",x=0,y=1,width=1,height=1,label="Horizontal dilation",value=true},
-		{class="intedit",name="ghdv1",x=1,y=1,width=1,height=1,value=0},
+		{class="intedit",name="ghdv1",x=1,y=1,width=1,height=1,value=10},
 		{class="checkbox",name="gvd1",x=0,y=2,width=1,height=1,label="Vertical dilation",value=true},
-		{class="intedit",name="gvdv1",x=1,y=2,width=1,height=1,value=-8},
+		{class="intedit",name="gvdv1",x=1,y=2,width=1,height=1,value=-3},
 		{class="checkbox",name="go1",x=0,y=3,width=1,height=1,label="\\bord",value=true},
 		{class="intedit",name="gov1",x=1,y=3,width=1,height=1,value=0, min=0, max=1000},
 		{class="color",name="gcolor3",x=2,y=3,width=1,height=1,value="&H000000&"},
-		{class="checkbox",name="gs1",x=0,y=4,width=1,height=1,label="\\shad",value=false},
+		{class="checkbox",name="gs1",x=0,y=4,width=1,height=1,label="\\shad",value=true},
 		{class="intedit",name="gsv1",x=1,y=4,width=1,height=1,value=0, min=0, max=1000},
 		{class="color",name="gcolor4",x=2,y=4,width=1,height=1,value="&H000000&"},
 		{class="checkbox",name="gb1",x=0,y=5,width=1,height=1,label="\\blur",value=true},
-		{class="intedit",name="gbv1",x=1,y=5,width=1,height=1,value=2, min=0, max=1000},
+		{class="intedit",name="gbv1",x=1,y=5,width=1,height=1,value=1, min=0, max=1000},
 		{class="label",x=0,y=6,width=1,height=1,label="* Uncheck for unchanging values"}
 	}
 	
@@ -58,13 +58,34 @@ function do_for_selected(sub, sel, act)
 				text2 = text2:gsub("}","\\c"..str2.."}")
 			end
 		end
+		n1 = 0;
+		text12=line2.text_stripped;
+		width1 = 0
+		line3 = sub[li]
+		logi1 = true
+		while logi1 do
+			str1 = string.find(text12, "\\N")
+			if str1==nil then
+				logi1 = false
+				line3.text = text12
+				sub[li] = line3
+				karaskel.preproc_line(sub,meta,styles,line3)
+				width1 = math.max(width1,line3.width)
+			else
+				n1 = n1+1
+				line3.text = string.sub(text12,1,str1-1)
+				sub[li] = line3
+				karaskel.preproc_line(sub,meta,styles,line3)
+				width1 = math.max(width1,line3.width)
+				text12 = string.sub(text12,str1+2,#text12)
+			end
+		end
+		sub[li] = line
 		if res.ghd1 then
-			width1=line2.width+2*res.ghdv1
-		else
-			width1=line2.width
+			width1=width1+2*res.ghdv1
 		end
 		if res.gvd1 then
-			height1=line2.height+2*res.gvdv1
+			height1=(n1+1)*line2.height+2*res.gvdv1
 			py=text2:match("\\pos%([%d.-]+,([%d.-]+)")
 			if not py then
 				if line2.styleref.align == 2 then
@@ -98,13 +119,18 @@ function do_for_selected(sub, sel, act)
 				end
 			end
 		else
-			height1=line2.height
+			height1=(n1+1)*line2.height
 		end
 		
 		if res.go1 then
 			str1 = string.find(text2, "\\bord")
 			if str1==nil then
-				text2="{\\bord"..res.gov1.."}"..text2
+				str2 = string.find(text2, "}")
+				if str2==nil then
+					text2="{\\bord"..res.gov1.."}"..text2
+				else
+					text2 = text2:gsub("}","\\bord"..res.gov1.."}")
+				end
 			else
 				text2 = text2:gsub("\\bord[%d.-]+","\\bord"..res.gov1)
 			end
@@ -116,7 +142,12 @@ function do_for_selected(sub, sel, act)
 		if res.gs1 then
 			str1 = string.find(text2, "\\shad")
 			if str1==nil then
-				text2="{\\shad"..res.gsv1.."}"..text2
+				str2 = string.find(text2, "}")
+				if str2==nil then
+					text2="{\\shad"..res.gsv1.."}"..text2
+				else
+					text2 = text2:gsub("}","\\shad"..res.gsv1.."}")
+				end
 			else
 				text2 = text2:gsub("\\shad[%d.-]+","\\shad"..res.gsv1)
 			end
@@ -128,7 +159,12 @@ function do_for_selected(sub, sel, act)
 		if res.gb1 then
 			str1 = string.find(text2, "\\blur")
 			if str1==nil then
-				text2="{\\blur"..res.gbv1.."}"..text2
+				str2 = string.find(text2, "}")
+				if str2==nil then
+					text2="{\\blur"..res.gbv1.."}"..text2
+				else
+					text2 = text2:gsub("}","\\blur"..res.gbv1.."}")
+				end
 			else
 				text2 = text2:gsub("\\blur[%d.-]+","\\blur"..res.gbv1)
 			end
@@ -138,8 +174,9 @@ function do_for_selected(sub, sel, act)
 		text2 = text2:gsub("\\k%d+","");text2 = text2:gsub("\\K%d+","");text2 = text2:gsub("\\kf%d+","");text2 = text2:gsub("\\ko%d+","")
 		text2 = text2:gsub("\\q%d","");text2 = text2:gsub("\\r","");text2 = text2:gsub("\\r%a","");text2 = text2:gsub("\\clip","");text2 = text2:gsub("\\iclip","")
 		text2 = text2:gsub("{}","");text2 = text2:gsub(text1,"")
-		if #text2 == 0 then
-			text2 = "{\\p1}"
+		str1 = string.find(text2, "}")
+		if str1==nil then
+			text2 = "{\\p1}"..text2
 		else
 			text2 = text2:gsub("}","\\p1}")
 		end
